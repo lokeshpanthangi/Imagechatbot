@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Similar Image Search | ImageBot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://ai-public.creatie.ai/gen_page/tailwind-custom.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com/3.4.5?plugins=forms@0.5.7,typography@0.5.13,aspect-ratio@0.4.2,container-queries@0.1.1"></script>
+  <script src="https://ai-public.creatie.ai/gen_page/tailwind-config.min.js" data-color="#000000" data-border-radius="medium"></script>
+  <style>
+    .upload-zone:hover {
+      border-color: #4f46e5;
+      background-color: #f8fafc;
+    }
+    .feature-btn.active {
+        background-color: #232325;
+        color: white;
+        border-color: #232325;
+      }
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .image-grid img {
+      width: 100%;
+      height: auto;
+      border-radius: 0.5rem;
+      object-fit: cover;
+      aspect-ratio: 1/1;
+    }
+  </style>
+</head>
+<body class="bg-white min-h-screen">
+  <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Sign Out Button -->
+    <div class="flex justify-end mb-4">
+        <a href="{{ url_for('logout') }}">
+          <button class="!rounded-button bg-gray-100 text-gray-700 px-4 py-2 text-sm font-medium border border-gray-200 hover:border-custom hover:text-custom transition-colors flex items-center gap-2">
+            <i class="fas fa-sign-out-alt"></i>Sign Out
+          </button>
+        </a>
+      </div>
+
+    <!-- Header -->
+    <header class="text-center mb-16">
+      <h1 class="text-4xl font-bold text-gray-900 mb-4">Similar Image Search</h1>
+      <p class="text-lg text-gray-600 max-w-3xl mx-auto">Find visually similar images based on your uploaded image</p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+      <!-- Left Panel - Upload Section -->
+      <div class="bg-white rounded-lg shadow-sm p-8 border border-gray-200">
+        <div class="space-y-6">
+          <!-- Feature Buttons -->
+          <div class="flex flex-wrap gap-4">
+            <button class="!rounded-button bg-gray-100 text-gray-700 px-6 py-3 font-medium border border-gray-200 hover:border-custom hover:text-custom transition-colors flex items-center gap-2 flex-1" onclick="activateVQA()">
+              <i class="fas fa-question-circle"></i> VQA
+            </button>
+            <button class="!rounded-button bg-gray-100 text-gray-700 px-6 py-3 font-medium border border-gray-200 hover:border-custom hover:text-custom transition-colors flex items-center gap-2 flex-1" onclick="activateImageCaptioning()">
+              <i class="fas fa-closed-captioning"></i> Image Captioning
+            </button>
+            <button class="!rounded-button bg-custom text-white px-6 py-3 font-medium hover:bg-opacity-90 transition-colors flex items-center gap-2 flex-1 feature-btn active" onclick="activateSimilarImageSearch()">
+              <i class="fas fa-search"></i> Similar Image Search
+            </button>
+            <button class="!rounded-button bg-gray-100 text-gray-700 px-6 py-3 font-medium border border-gray-200 hover:border-custom hover:text-custom transition-colors flex items-center gap-2 flex-1" onclick="activateImageEnhancement()">
+              <i class="fas fa-magic"></i> Image Enhancement
+            </button>
+          </div>
+
+          <!-- Description -->
+          <div class="bg-gray-50 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Similar Image Search</h3>
+            <p class="text-gray-600">Our AI analyzes your uploaded image to find visually similar images based on:</p>
+            <ul class="mt-3 space-y-2 text-gray-600">
+              <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Color composition and patterns</li>
+              <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Shapes and structures</li>
+              <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Textures and visual features</li>
+              <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Semantic content and objects</li>
+            </ul>
+          </div>
+
+          <!-- Uploaded Image Display -->
+          <div class="border-2 border-gray-200 rounded-lg p-6 text-center">
+            <div class="mx-auto flex flex-col items-center">
+                <img src="{{ url_for('serve_uploaded_file', filename=filename) }}" class="max-h-64 mx-auto mb-4 rounded-lg" alt="Uploaded image">
+                <p class="text-sm text-gray-500">Your uploaded image</p>
+                <button class="mt-4 !rounded-button bg-custom text-white px-6 py-2 text-sm font-medium hover:bg-opacity-90 transition-colors" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+                    Change Image
+                </button>
+            </div>
+        </div>
+        <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleFileUpload(event)">
+        </div>
+      </div>
+
+      <!-- Right Panel - Results Section -->
+      <div class="bg-white rounded-lg shadow-sm p-8 border border-gray-200">
+        <div class="h-full flex flex-col">
+          <div class="flex-1 mb-6">
+            <div class="bg-gray-50 rounded-lg p-6 h-full">
+              {% if similar_images %}
+                <div class="space-y-4">
+                  <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                      <div class="w-8 h-8 rounded-full bg-custom flex items-center justify-center">
+                        <i class="fas fa-robot text-white text-sm"></i>
+                      </div>
+                    </div>
+                    <div class="flex-1">
+                      <p class="text-gray-700 font-medium">Found {{ similar_images|length }} similar images:</p>
+                      <div class="image-grid mt-4">
+                        {% for img_url in similar_images %}
+                          <img src="{{ img_url }}" alt="Similar Image">
+                        {% endfor %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% else %}
+                <div class="space-y-4">
+                  <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                      <div class="w-8 h-8 rounded-full bg-custom flex items-center justify-center">
+                        <i class="fas fa-robot text-white text-sm"></i>
+                      </div>
+                    </div>
+                    <div class="flex-1">
+                      <p class="text-gray-700">Upload an image to find visually similar images.</p>
+                      <ul class="mt-2 space-y-2 text-gray-600">
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Matches based on visual features</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Finds similar color patterns</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Identifies comparable compositions</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Locates semantically related images</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex gap-4">
+            <button class="!rounded-button bg-custom text-white px-6 py-3 font-medium hover:bg-opacity-90 transition-colors flex-1" onclick="refreshResults()">
+              <i class="fas fa-sync-alt mr-2"></i> Refresh Results
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200 text-center">
+        <div class="w-12 h-12 rounded-full bg-custom/10 flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-brain text-custom text-xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Advanced AI Models</h3>
+        <p class="text-gray-600">Powered by state-of-the-art computer vision and similarity detection models</p>
+      </div>
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200 text-center">
+        <div class="w-12 h-12 rounded-full bg-custom/10 flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-bolt text-custom text-xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Fast Similarity Matching</h3>
+        <p class="text-gray-600">Quickly find visually similar images with our optimized search algorithms</p>
+      </div>
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200 text-center">
+        <div class="w-12 h-12 rounded-full bg-custom/10 flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-shield-alt text-custom text-xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Secure & Private</h3>
+        <p class="text-gray-600">Your images and data are processed securely and never stored without permission</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentImage = null; // Track current image on client side
+
+    async function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+    
+        // Show loading state
+        const uploadZone = document.querySelector('.border-2.border-gray-200');
+        if (uploadZone) {
+            uploadZone.innerHTML = `
+                <div class="mx-auto flex flex-col items-center">
+                    <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-600">Uploading and processing image...</p>
+                </div>
+            `;
+        } else {
+            console.error('Element not found: .border-2.border-gray-200');
+            return;
+        }
+    
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+    
+            const response = await fetch('/similarity_upload', {
+                method: 'POST',
+                body: formData
+            });
+    
+            const data = await response.json();
+    
+            if (data.success) {
+                currentImage = data.filename; // Update current image
+    
+                // Update preview
+                uploadZone.innerHTML = `
+                    <div class="mx-auto flex flex-col items-center">
+                        <img src="${data.image_url}" class="max-h-64 mx-auto mb-4 rounded-lg" alt="Uploaded image">
+                        <p class="text-sm text-gray-500">${file.name}</p>
+                        <div class="flex gap-2 mt-2">
+                            <button class="!rounded-button bg-custom text-white px-4 py-2 text-sm" 
+                                    onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+                                Change Image
+                            </button>
+                            <button class="!rounded-button bg-gray-100 text-gray-700 px-4 py-2 text-sm border border-gray-200" 
+                                    onclick="resetUpload()">
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                `;
+    
+                // Update the similarity results
+                const similarityResult = document.getElementById('similarity-result');
+                if (similarityResult) {
+                    similarityResult.innerHTML = `
+                        <div class="space-y-4">
+                            <div class="flex items-start gap-4">
+                                <div class="flex-shrink-0">
+                                    <div class="w-8 h-8 rounded-full bg-custom flex items-center justify-center">
+                                        <i class="fas fa-robot text-white text-sm"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-gray-700 font-medium">Found ${data.similar_images.length} similar images:</p>
+                                    <div class="image-grid mt-4">
+                                        ${data.similar_images.map(img_url => `<img src="${img_url}" alt="Similar Image">`).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    console.error('Element not found: #similarity-result');
+                }
+    
+                // Update the URL for the current image
+                history.pushState(null, '', `/similarity/${data.filename}`);
+            } else {
+                throw new Error(data.message || 'Upload failed');
+            }
+        } catch (error) {
+            uploadZone.innerHTML = `
+                <div class="mx-auto flex flex-col items-center text-red-500">
+                    <i class="fas fa-exclamation-circle text-4xl mb-4"></i>
+                    <p>${error.message || 'Upload error'}</p>
+                    <button class="mt-4 !rounded-button bg-custom text-white px-4 py-2 text-sm" 
+                            onclick="resetUpload()">
+                        Try Again
+                    </button>
+                </div>
+            `;
+        }
+    }
+    
+    function resetUpload() {
+        document.getElementById('file-input').value = '';
+        currentImage = null;
+    
+        const uploadZone = document.querySelector('.border-2.border-gray-200');
+        if (uploadZone) {
+            uploadZone.innerHTML = `
+                <div class="mx-auto flex flex-col items-center">
+                    <img src="{{ url_for('serve_uploaded_file', filename=filename) }}" class="max-h-64 mx-auto mb-4 rounded-lg" alt="Uploaded image">
+                    <p class="text-sm text-gray-500">Your uploaded image</p>
+                    <button class="mt-4 !rounded-button bg-custom text-white px-6 py-2 text-sm font-medium hover:bg-opacity-90 transition-colors" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+                        Change Image
+                    </button>
+                </div>
+            `;
+        } else {
+            console.error('Element not found: .border-2.border-gray-200');
+        }
+    }
+    
+    function refreshResults() {
+      window.location.reload();
+    }
+    
+    // Feature activation functions
+    function activateVQA() {
+      const filename = '{{ filename }}';
+      if (filename) {
+        window.location.href = `/vqa/${filename}`;
+      } else {
+        window.location.href = '/vqa';
+      }
+    }
+    // Feature activation functions
+    function activateImageCaptioning() {
+      const filename = '{{ filename }}';
+      if (filename) {
+          window.location.href = `/caption/${filename}`;
+      } else {
+          window.location.href = '/caption';
+      }
+  }
+
+  function activateSimilarImageSearch() {
+      const filename = '{{ filename }}';
+      if (filename) {
+          window.location.href = `/similarity/${filename}`;
+      } else {
+          window.location.href = '/similarity';
+      }
+  }
+
+  function activateImageEnhancement() {
+      const filename = '{{ filename }}';
+      if (filename) {
+          window.location.href = `/enhance/${filename}`;
+      } else {
+          window.location.href = '/enhance';
+      }
+  }
+    
+    function showError(message) {
+      const uploadZone = document.querySelector('.border-dashed');
+      uploadZone.innerHTML = `
+        <div class="mx-auto flex flex-col items-center text-red-500">
+          <i class="fas fa-exclamation-circle text-4xl mb-4"></i>
+          <p>${message}</p>
+          <button class="mt-4 !rounded-button bg-custom text-white px-4 py-2 text-sm" onclick="resetUpload()">
+            Try Again
+          </button>
+        </div>
+      `;
+    }
+    
+    
+  </script>
+</body>
+</html>

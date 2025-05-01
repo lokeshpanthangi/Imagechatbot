@@ -1,0 +1,4 @@
+/.venv/
+models/blip-captioning
+models/blip-vqa
+models.zip

@@ -167,8 +167,3 @@ We welcome contributions! Please follow these steps:
 For questions, suggestions, or support:
 - Email: lokeshpantangi@gmail.com
 - GitHub: [lokeshpanthangi](https://github.com/lokeshpanthangi)
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-

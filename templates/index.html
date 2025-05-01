@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Processing Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --white: #ffffff;
+      --black: #000000;
+      --light-gray: #f5f5f5;
+      --medium-gray: #e0e0e0;
+      --dark-gray: #333333;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+    
+    body {
+      background-color: var(--white);
+      color: var(--black);
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3rem;
+      border-bottom: 1px solid var(--medium-gray);
+      padding-bottom: 1rem;
+    }
+    
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 500;
+    }
+    
+    .logout-btn {
+      background-color: transparent;
+      color: var(--black);
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 500;
+      border: 1px solid var(--black);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+    
+    .logout-btn:hover {
+      background-color: var(--black);
+      color: var(--white);
+    }
+    
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    
+    .feature-card {
+      background-color: var(--white);
+      border: 1px solid var(--medium-gray);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--black);
+    }
+    
+    .feature-card:hover {
+      border-color: var(--black);
+      transform: translateY(-5px);
+    }
+    
+    .feature-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: var(--black);
+    }
+    
+    .feature-title {
+      font-size: 1.2rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+    
+    .feature-desc {
+      font-size: 0.9rem;
+      color: var(--dark-gray);
+    }
+    
+    .upload-section {
+      border: 2px dashed var(--medium-gray);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .upload-btn {
+      background-color: transparent;
+      color: var(--black);
+      border: 1px solid var(--black);
+      padding: 0.8rem 1.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      margin-top: 1rem;
+      transition: all 0.2s ease;
+    }
+    
+    .upload-btn:hover {
+      background-color: var(--black);
+      color: var(--white);
+    }
+    
+    .preview-image {
+      max-width: 100%;
+      max-height: 200px;
+      margin: 1rem 0;
+      display: none;
+    }
+    
+    input[type="file"] {
+      display: none;
+    }
+    
+    .image-preview-container {
+      display: flex;
+      justify-content: center;
+      margin: 1rem 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Image Processing Dashboard</h1>
+      <a href="{{ url_for('logout') }}" class="logout-btn">
+        <i class="fas fa-sign-out-alt"></i>
+        Logout
+      </a>
+    </div>
+    
+    <div class="upload-section">
+      <p>Upload an image to get started</p>
+      <form id="upload-form" method="POST" enctype="multipart/form-data">
+        <button type="button" class="upload-btn" onclick="document.getElementById('file-input').click()">
+          <i class="fas fa-cloud-upload-alt"></i> Select Image
+        </button>
+        <input type="file" id="file-input" name="file" accept="image/*" onchange="previewAndUpload(event)">
+      </form>
+      <div class="image-preview-container">
+        {% if filename %}
+          <img id="preview-image" class="preview-image" src="{{ url_for('serve_uploaded_file', filename=filename) }}" alt="Preview" style="display: block;">
+        {% else %}
+          <img id="preview-image" class="preview-image" src="#" alt="Preview">
+        {% endif %}
+      </div>
+    </div>
+    
+    {% if filename %}
+    <div class="feature-grid">
+      <a href="{{ url_for('caption_image', filename=filename) }}" class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-comment-alt"></i>
+        </div>
+        <h3 class="feature-title">Image Captioning</h3>
+        <p class="feature-desc">Generate descriptive captions for your images</p>
+      </a>
+      
+      <a href="{{ url_for('vqa_image', filename=filename) }}" class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-question-circle"></i>
+        </div>
+        <h3 class="feature-title">Visual Q&A</h3>
+        <p class="feature-desc">Ask questions about your images</p>
+      </a>
+      
+      <a href="{{ url_for('similarity_image', filename=filename) }}" class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-search"></i>
+        </div>
+        <h3 class="feature-title">Similarity Search</h3>
+        <p class="feature-desc">Find visually similar images</p>
+      </a>
+      
+      <a href="{{ url_for('enhance_image', filename=filename) }}" class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-magic"></i>
+        </div>
+        <h3 class="feature-title">Image Enhancement</h3>
+        <p class="feature-desc">Improve image quality and resolution</p>
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  <script>
+    function previewAndUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const preview = document.getElementById('preview-image');
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+          
+          // Submit the form
+          document.getElementById('upload-form').submit();
+        }
+        reader.readAsDataURL(file);
+      }
+    }
+  </script>
+</body>
+</html>

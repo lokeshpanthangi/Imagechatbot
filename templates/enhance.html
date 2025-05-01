@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Enhancement | ImageBot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://ai-public.creatie.ai/gen_page/tailwind-custom.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com/3.4.5?plugins=forms@0.5.7,typography@0.5.13,aspect-ratio@0.4.2,container-queries@0.1.1"></script>
+  <script src="https://ai-public.creatie.ai/gen_page/tailwind-config.min.js" data-color="#000000" data-border-radius="medium"></script>
+  <style>
+    .upload-zone:hover {
+      border-color: #4f46e5;
+      background-color: #f8fafc;
+    }
+    .feature-btn.active {
+        background-color: #232325;
+        color: white;
+        border-color: #232325;
+      }
+    .image-comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 1rem;
+    }
+    .image-comparison img {
+      width: 100%;
+      height: auto;
+      border-radius: 0.5rem;
+      object-fit: contain;
+      max-height: 400px;
+      border: 1px solid #e5e7eb;
+    }
+  </style>
+</head>
+<body class="bg-white min-h-screen">
+  <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Sign Out Button -->
+    <div class="flex justify-end mb-4">
+        <a href="{{ url_for('logout') }}">
+          <button class="!rounded-button bg-gray-100 text-gray-700 px-4 py-2 text-sm font-medium border border-gray-200 hover:border-custom hover:text-custom transition-colors flex items-center gap-2">
+            <i class="fas fa-sign-out-alt"></i>Sign Out
+          </button>
+        </a>
+      </div>
+
+    <!-- Header -->
+    <header class="text-center mb-16">
+      <h1 class="text-4xl font-bold text-gray-900 mb-4">Image Enhancement</h1>
+      <p class="text-lg text-gray-600 max-w-3xl mx-auto">Enhance and upscale your images with AI-powered technology</p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+      <!-- Left Panel - Upload Section -->
+      <div class="bg-white rounded-lg shadow-sm p-8 border border-gray-200">
+        <div class="space-y-6">
+          <!-- Feature Buttons -->
+          <div class="flex flex-wrap gap-4">
+            <button class="!rounded-button bg-gray-100 text-gray-700 px-6 py-3 font-medium border border-gray-200 hover:border-custom hover:text-custom transition-colors flex items-center gap-2 flex-1" onclick="activateVQA()">
+              <i class="fas fa-question-circle"></i> VQA
+            </button>
+            <button class="!rounded-button bg-gray-100 text-gray-700 px-6 py-3 font-medium border border-gray-200 hover:border-custom hover:text-custom transition-colors flex items-center gap-2 flex-1" onclick="activateImageCaptioning()">
+              <i class="fas fa-closed-captioning"></i> Image Captioning
+            </button>
+            <button class="!rounded-button bg-gray-100 text-gray-700 px-6 py-3 font-medium border border-gray-200 hover:border-custom hover:text-custom transition-colors flex items-center gap-2 flex-1" onclick="activateSimilarImageSearch()">
+              <i class="fas fa-search"></i> Similar Image Search
+            </button>
+            <button class="!rounded-button bg-custom text-white px-6 py-3 font-medium hover:bg-opacity-90 transition-colors flex items-center gap-2 flex-1 feature-btn active" onclick="activateImageEnhancement()">
+              <i class="fas fa-magic"></i> Image Enhancement
+            </button>
+          </div>
+
+          <!-- Description -->
+          <div class="bg-gray-50 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">AI Image Enhancement</h3>
+            <p class="text-gray-600">Our AI enhances your images by:</p>
+            <ul class="mt-3 space-y-2 text-gray-600">
+              <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Upscaling resolution (2x)</li>
+              <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Reducing noise and artifacts</li>
+              <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Sharpening details</li>
+              <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Improving overall clarity</li>
+            </ul>
+          </div>
+
+          <!-- Uploaded Image Display -->
+          <div class="border-2 border-gray-200 rounded-lg p-6 text-center" id="upload-zone">
+            <div class="mx-auto flex flex-col items-center">
+              <img src="{{ url_for('serve_uploaded_file', filename=original_filename) }}" class="max-h-64 mx-auto mb-4 rounded-lg" alt="Original image">
+              <p class="text-sm text-gray-500">Your original image</p>
+              <button class="mt-4 !rounded-button bg-custom text-white px-6 py-2 text-sm font-medium hover:bg-opacity-90 transition-colors" onclick="document.getElementById('file-input').click()">
+                Change Image
+              </button>
+            </div>
+          </div>
+          <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleFileUpload(event)">
+        </div>
+      </div>
+
+      <!-- Right Panel - Results Section -->
+      <div class="bg-white rounded-lg shadow-sm p-8 border border-gray-200">
+        <div class="h-full flex flex-col">
+          <div class="flex-1 mb-6">
+            <div class="bg-gray-50 rounded-lg p-6 h-full">
+              <div class="space-y-4">
+                <div class="flex items-start gap-4">
+                  <div class="flex-shrink-0">
+                    <div class="w-8 h-8 rounded-full bg-custom flex items-center justify-center">
+                      <i class="fas fa-robot text-white text-sm"></i>
+                    </div>
+                  </div>
+                  <div class="flex-1">
+                    <p class="text-gray-700 font-medium">Enhanced Image Results:</p>
+                    <div class="image-comparison mt-4">
+                      <div>
+                        <p class="text-sm font-medium text-gray-700 mb-2">Original</p>
+                        <img src="{{ url_for('serve_uploaded_file', filename=original_filename) }}" alt="Original Image" id="original-image">
+                        <p class="text-xs text-gray-500 mt-2" id="original-resolution">
+                          Loading resolution...
+                        </p>
+                      </div>
+                      <div>
+                        <p class="text-sm font-medium text-gray-700 mb-2">Enhanced</p>
+                        <img src="{{ url_for('serve_upscaled_file', filename=upscaled_filename) }}" alt="Enhanced Image" id="enhanced-image">
+                        <p class="text-xs text-gray-500 mt-2" id="enhanced-resolution">
+                          Loading resolution...
+                        </p>
+                      </div>
+                    </div>
+                    <div class="mt-4 text-sm text-gray-600">
+                      <p>The enhanced image has been upscaled 2x while maintaining and improving image quality.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex gap-4">
+            <a href="{{ url_for('download_enhanced', filename=upscaled_filename) }}" class="!rounded-button bg-custom text-white px-6 py-3 font-medium hover:bg-opacity-90 transition-colors flex-1 text-center">
+              <i class="fas fa-download mr-2"></i> Download
+            </a>
+            <button class="!rounded-button bg-custom text-white px-6 py-3 font-medium hover:bg-opacity-90 transition-colors flex-1" onclick="reEnhanceImage()">
+              <i class="fas fa-sync-alt mr-2"></i> Re-enhance
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200 text-center">
+        <div class="w-12 h-12 rounded-full bg-custom/10 flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-brain text-custom text-xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Advanced AI Models</h3>
+        <p class="text-gray-600">Powered by state-of-the-art super-resolution neural networks</p>
+      </div>
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200 text-center">
+        <div class="w-12 h-12 rounded-full bg-custom/10 flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-bolt text-custom text-xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">High-Quality Upscaling</h3>
+        <p class="text-gray-600">2x resolution increase while preserving and enhancing details</p>
+      </div>
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200 text-center">
+        <div class="w-12 h-12 rounded-full bg-custom/10 flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-shield-alt text-custom text-xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Secure Processing</h3>
+        <p class="text-gray-600">Your images are processed securely and never stored without permission</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Function to get image dimensions
+    function getImageResolution(imgElement, outputElement) {
+      const img = new Image();
+      img.onload = function() {
+        outputElement.textContent = `${this.width} × ${this.height} pixels`;
+      };
+      img.onerror = function() {
+        outputElement.textContent = 'Resolution unavailable';
+      };
+      img.src = imgElement.src;
+    }
+
+    // Update resolution displays
+    function updateResolutions() {
+      const originalImg = document.getElementById('original-image');
+      const enhancedImg = document.getElementById('enhanced-image');
+      const originalRes = document.getElementById('original-resolution');
+      const enhancedRes = document.getElementById('enhanced-resolution');
+      
+      if (originalImg && originalRes) getImageResolution(originalImg, originalRes);
+      if (enhancedImg && enhancedRes) getImageResolution(enhancedImg, enhancedRes);
+    }
+
+    async function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+  
+      // Show loading state
+      const uploadZone = document.getElementById('upload-zone');
+      uploadZone.innerHTML = `
+          <div class="mx-auto flex flex-col items-center">
+              <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+              <p class="text-gray-600">Uploading and processing image...</p>
+          </div>
+      `;
+  
+      const formData = new FormData();
+      formData.append('file', file);
+  
+      try {
+          const response = await fetch('/enhance_upload', {
+              method: 'POST',
+              body: formData
+          });
+  
+          const data = await response.json();
+  
+          if (data.success) {
+              // Update the original image preview
+              document.getElementById('original-image').src = data.image_url;
+              document.getElementById('original-resolution').textContent = 'Original resolution: ' + data.original_resolution;
+  
+              // Enhance the image
+              await enhanceImage(data.filename);
+          } else {
+              showError('Error uploading file. Please try again.');
+          }
+      } catch (error) {
+          showError('Error uploading file. Please try again.');
+          console.error('Error:', error);
+      }
+  }
+  
+  
+    async function enhanceImage(filename) {
+      const response = await fetch(`/enhance/${filename}`, {
+          method: 'POST',
+          headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+          }
+      });
+  
+      const data = await response.json();
+  
+      if (data.success) {
+          document.getElementById('enhanced-image').src = data.enhanced_url;
+          document.getElementById('enhanced-resolution').textContent = 'Enhanced resolution: ' + data.enhanced_resolution;
+      } else {
+          showError('Error enhancing image. Please try again.');
+      }
+  }
+  
+
+    // Re-enhance image
+    function reEnhanceImage() {
+      const loadingText = document.getElementById('enhanced-resolution');
+      if (loadingText) loadingText.textContent = 'Processing...';
+      window.location.reload();
+    }
+
+    function showError(message) {
+      const uploadZone = document.getElementById('upload-zone');
+      uploadZone.innerHTML = `
+        <div class="mx-auto flex flex-col items-center text-red-500">
+          <i class="fas fa-exclamation-circle text-4xl mb-4"></i>
+          <p>${message}</p>
+          <button class="mt-4 !rounded-button bg-custom text-white px-4 py-2 text-sm" onclick="resetUpload()">
+            Try Again
+          </button>
+        </div>
+      `;
+    }
+    
+    function resetUpload() {
+      document.getElementById('file-input').value = '';
+      const uploadZone = document.getElementById('upload-zone');
+      uploadZone.innerHTML = `
+          <div class="mx-auto flex flex-col items-center">
+              <img src="{{ url_for('serve_uploaded_file', filename=original_filename) }}" class="max-h-64 mx-auto mb-4 rounded-lg" alt="Original image">
+              <p class="text-sm text-gray-500">Your original image</p>
+              <button class="mt-4 !rounded-button bg-custom text-white px-6 py-2 text-sm font-medium hover:bg-opacity-90 transition-colors" onclick="document.getElementById('file-input').click()">
+                  Change Image
+              </button>
+          </div>
+      `;
+  }
+  
+    // Feature activation functions
+    function activateVQA() {
+      if ('{{ original_filename }}') {
+        window.location.href = `/vqa/{{ original_filename }}`;
+      } else {
+        window.location.href = '/vqa';
+      }
+    }
+    
+    function activateImageCaptioning() {
+      if ('{{ original_filename }}') {
+        window.location.href = `/caption/{{ original_filename }}`;
+      } else {
+        window.location.href = '/caption';
+      }
+    }
+    
+    function activateSimilarImageSearch() {
+      if ('{{ original_filename }}') {
+        window.location.href = `/similarity/{{ original_filename }}`;
+      } else {
+        window.location.href = '/similarity';
+      }
+    }
+    
+    function activateImageEnhancement() {
+      if ('{{ original_filename }}') {
+        window.location.href = `/enhance/{{ original_filename }}`;
+      } else {
+        window.location.href = '/enhance';
+      }
+    }
+
+    // Initialize resolutions when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      updateResolutions();
+    });
+  </script>
+</body>
+</html>

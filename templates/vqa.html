@@ -1,0 +1,439 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visual Question Answering | ImageBot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://ai-public.creatie.ai/gen_page/tailwind-custom.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com/3.4.5?plugins=forms@0.5.7,typography@0.5.13,aspect-ratio@0.4.2,container-queries@0.1.1"></script>
+  <script src="https://ai-public.creatie.ai/gen_page/tailwind-config.min.js" data-color="#000000" data-border-radius="medium"></script>
+  <style>
+    .upload-zone:hover {
+      border-color: #4f46e5;
+      background-color: #f8fafc;
+    }
+    #answer-section {
+      min-height: 200px;
+    }
+    .feature-btn.active {
+        background-color: #232325;
+        color: white;
+        border-color: #232325;
+      }
+  </style>
+</head>
+<body class="bg-white min-h-screen">
+  <div class="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <!-- Sign Out Button -->
+    <div class="flex justify-end mb-4">
+        <a href="{{ url_for('logout') }}">
+          <button class="!rounded-button bg-gray-100 text-gray-700 px-4 py-2 text-sm font-medium border border-gray-200 hover:border-custom hover:text-custom transition-colors flex items-center gap-2">
+            <i class="fas fa-sign-out-alt"></i>Sign Out
+          </button>
+        </a>
+      </div>
+
+    <!-- Header -->
+    <header class="text-center mb-16">
+      <h1 class="text-4xl font-bold text-gray-900 mb-4">Visual Question Answering</h1>
+      <p class="text-lg text-gray-600 max-w-3xl mx-auto">Ask questions about your images and get accurate answers from our AI</p>
+    </header>
+
+    <!-- Main Panel -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+      <!-- Left Panel -->
+      <div class="bg-white rounded-lg shadow-sm p-8 border border-gray-200">
+        <div class="space-y-6">
+          <!-- Feature Buttons -->
+          <div class="flex flex-wrap gap-4">
+            <button class="!rounded-button bg-custom text-white px-6 py-3 font-medium hover:bg-opacity-90 transition-colors flex items-center gap-2 flex-1 feature-btn active" onclick="activateVQA()">
+              <i class="fas fa-question-circle"></i> VQA
+            </button>
+            <button class="!rounded-button bg-gray-100 text-gray-700 px-6 py-3 font-medium border border-gray-200 hover:border-custom hover:text-custom transition-colors flex items-center gap-2 flex-1" onclick="activateImageCaptioning()">
+              <i class="fas fa-closed-captioning"></i> Image Captioning
+            </button>
+            <button class="!rounded-button bg-gray-100 text-gray-700 px-6 py-3 font-medium border border-gray-200 hover:border-custom hover:text-custom transition-colors flex items-center gap-2 flex-1" onclick="activateSimilarImageSearch()">
+              <i class="fas fa-search"></i> Similar Image Search
+            </button>
+            <button class="!rounded-button bg-gray-100 text-gray-700 px-6 py-3 font-medium border border-gray-200 hover:border-custom hover:text-custom transition-colors flex items-center gap-2 flex-1" onclick="activateImageEnhancement()">
+              <i class="fas fa-magic"></i> Image Enhancement
+            </button>
+          </div>
+
+          <!-- Description -->
+          <div class="bg-gray-50 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Visual Question Answering</h3>
+            <p class="text-gray-600">Upload an image and ask questions about its content. Our AI can identify objects, describe scenes, analyze relationships, and answer complex questions about your images.</p>
+          </div>
+
+          <!-- Upload Zone -->
+          <div class="border-2 border-dashed border-gray-200 rounded-lg p-12 text-center" onclick="document.getElementById('file-input').click()">
+            <div class="mx-auto flex flex-col items-center">
+              {% if filename %}
+                <img src="{{ url_for('serve_uploaded_file', filename=filename) }}" class="max-h-64 mx-auto mb-4 rounded-lg" alt="Uploaded image">
+                <p class="text-sm text-gray-500">Image ready for questions</p>
+              {% else %}
+                <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Drop your image here</h3>
+                <p class="text-sm text-gray-500 mb-4">or click to upload</p>
+              {% endif %}
+              <button class="!rounded-button bg-custom text-white px-6 py-2 text-sm font-medium hover:bg-opacity-90 transition-colors" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+                Choose File
+              </button>
+            </div>
+          </div>
+          <input type="file" id="file-input" accept="image/*" style="display:none" onchange="handleFileUpload(event)">
+        </div>
+      </div>
+
+      <!-- Right Panel -->
+      <div class="bg-white rounded-lg shadow-sm p-8 border border-gray-200">
+        <div class="h-full flex flex-col">
+          <div class="flex-1 mb-6">
+            <div class="bg-gray-50 rounded-lg p-6 h-full" id="answer-section">
+              {% if answer %}
+                <div class="space-y-4">
+                  <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                      <div class="w-8 h-8 rounded-full bg-custom flex items-center justify-center">
+                        <i class="fas fa-robot text-white text-sm"></i>
+                      </div>
+                    </div>
+                    <div class="flex-1">
+                      <p class="text-gray-700 font-medium">Question:</p>
+                      <p class="mt-1 p-2 bg-white border border-gray-200 rounded-lg">{{ question }}</p>
+                      <p class="text-gray-700 font-medium mt-3">Answer:</p>
+                      <p class="mt-1 p-2 bg-white border border-gray-200 rounded-lg">{{ answer }}</p>
+                    </div>
+                  </div>
+                </div>
+              {% else %}
+                <div class="space-y-4">
+                  <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0">
+                      <div class="w-8 h-8 rounded-full bg-custom flex items-center justify-center">
+                        <i class="fas fa-robot text-white text-sm"></i>
+                      </div>
+                    </div>
+                    <div class="flex-1">
+                      <p class="text-gray-700">Upload an image and ask questions about:</p>
+                      <ul class="mt-2 space-y-2 text-gray-600">
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Objects and their attributes</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Actions and activities</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Scene context and relationships</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Abstract concepts in the image</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Question Input -->
+          <!-- Question Input -->
+    <div class="relative mb-4">
+      <input
+        type="text"
+        id="question-input"
+        placeholder="Ask a question about your image..."
+        class="w-full pl-4 pr-12 py-3 bg-white border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-custom focus:border-transparent placeholder-gray-400"
+        disabled
+        onkeypress="if(event.key === 'Enter') submitQuestion()"
+      >
+      <button
+        id="submit-question-btn"
+        class="!rounded-button absolute right-2 top-1/2 transform -translate-y-1/2 bg-custom text-white p-2 hover:bg-opacity-90 transition-colors"
+        disabled
+        onclick="submitQuestion()"
+      >
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+          <!-- Action Buttons -->
+          <div class="flex gap-4">
+            {% if filename %}
+              <a href="{{ url_for('process_image', filename=filename) }}" class="!rounded-button bg-gray-100 text-gray-700 px-6 py-3 font-medium border border-gray-200 hover:border-custom hover:text-custom transition-colors flex-1 text-center">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Options
+              </a>
+            {% else %}
+              <button class="!rounded-button bg-gray-100 text-gray-700 px-6 py-3 font-medium border border-gray-200 opacity-50 cursor-not-allowed flex-1 text-center" disabled>
+                <i class="fas fa-arrow-left mr-2"></i> Back to Options
+              </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200 text-center">
+        <div class="w-12 h-12 rounded-full bg-custom/10 flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-brain text-custom text-xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Advanced AI Models</h3>
+        <p class="text-gray-600">Powered by state-of-the-art computer vision and natural language processing models</p>
+      </div>
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200 text-center">
+        <div class="w-12 h-12 rounded-full bg-custom/10 flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-bolt text-custom text-xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Real-time Processing</h3>
+        <p class="text-gray-600">Get instant results with our optimized processing pipeline and efficient algorithms</p>
+      </div>
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200 text-center">
+        <div class="w-12 h-12 rounded-full bg-custom/10 flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-shield-alt text-custom text-xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Secure & Private</h3>
+        <p class="text-gray-600">Your images and data are processed securely and never stored without permission</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentImage = null; // Track current image on client side
+
+    async function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+  
+      // Show loading state
+      const uploadZone = document.querySelector('.border-dashed');
+      uploadZone.innerHTML = `
+          <div class="mx-auto flex flex-col items-center">
+              <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+              <p class="text-gray-600">Processing image...</p>
+          </div>
+      `;
+  
+      try {
+          const formData = new FormData();
+          formData.append('file', file);
+  
+          const response = await fetch('/vqa_upload', {
+              method: 'POST',
+              body: formData
+          });
+  
+          const data = await response.json();
+  
+          if (data.success) {
+              currentImage = data.filename; // Update current image
+  
+              // Update preview
+              uploadZone.innerHTML = `
+                  <div class="mx-auto flex flex-col items-center">
+                      <img src="${data.image_url}" class="max-h-64 mx-auto mb-4 rounded-lg" alt="Uploaded image">
+                      <p class="text-sm text-gray-500">${file.name}</p>
+                      <div class="flex gap-2 mt-2">
+                          <button class="!rounded-button bg-custom text-white px-4 py-2 text-sm" 
+                          onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+                          Change Image
+                          </button>
+                          <button class="!rounded-button bg-gray-100 text-gray-700 px-4 py-2 text-sm border border-gray-200" 
+                          onclick="resetUpload()">
+                          Remove
+                          </button>
+                      </div>
+                  </div>
+              `;
+  
+              // Enable question input
+              document.getElementById('question-input').disabled = false;
+              document.getElementById('submit-question-btn').disabled = false;
+  
+              // Update the URL for the current image
+              history.pushState(null, '', `/vqa/${data.filename}`);
+          } else {
+              throw new Error(data.message || 'Upload failed');
+          }
+      } catch (error) {
+          uploadZone.innerHTML = `
+              <div class="mx-auto flex flex-col items-center text-red-500">
+                  <i class="fas fa-exclamation-circle text-4xl mb-4"></i>
+                  <p>${error.message || 'Upload error'}</p>
+                  <button class="mt-4 !rounded-button bg-custom text-white px-4 py-2 text-sm" 
+                  onclick="resetUpload()">
+                  Try Again
+                  </button>
+              </div>
+          `;
+      }
+  }
+  
+async function submitQuestion() {
+    const question = document.getElementById('question-input').value.trim();
+    if (!question || !currentImage) return;
+    
+    // Show loading state
+    const answerSection = document.getElementById('answer-section');
+    answerSection.innerHTML = `
+        <div class="flex justify-center items-center h-full">
+            <i class="fas fa-spinner fa-spin text-4xl text-gray-400"></i>
+        </div>
+    `;
+    
+    try {
+        const response = await fetch('/vqa_answer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `question=${encodeURIComponent(question)}`
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            answerSection.innerHTML = `
+                <div class="space-y-4">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 rounded-full bg-custom flex items-center justify-center">
+                                <i class="fas fa-robot text-white text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-gray-700 font-medium">Question:</p>
+                            <p class="mt-1 p-2 bg-white border border-gray-200 rounded-lg">${question}</p>
+                            <p class="text-gray-700 font-medium mt-3">Answer:</p>
+                            <p class="mt-1 p-2 bg-white border border-gray-200 rounded-lg">${data.answer}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            throw new Error(data.message || 'Error processing question');
+        }
+    } catch (error) {
+        answerSection.innerHTML = `
+            <div class="flex justify-center items-center h-full text-red-500">
+                <i class="fas fa-exclamation-circle text-4xl mr-3"></i>
+                <p>${error.message || 'Error processing question'}</p>
+            </div>
+        `;
+    }
+}
+
+function resetUpload() {
+    document.getElementById('file-input').value = '';
+    currentImage = null;
+    
+    const uploadZone = document.querySelector('.border-dashed');
+    uploadZone.innerHTML = `
+        <div class="mx-auto flex flex-col items-center">
+            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Drop your image here</h3>
+            <p class="text-sm text-gray-500 mb-4">or click to upload</p>
+            <button class="!rounded-button bg-custom text-white px-6 py-2 text-sm font-medium hover:bg-opacity-90 transition-colors" 
+                    onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+                Choose File
+            </button>
+        </div>
+    `;
+    
+    // Disable question input
+    document.getElementById('question-input').disabled = true;
+    document.getElementById('question-input').value = '';
+    document.getElementById('submit-question-btn').disabled = true;
+    
+    // Reset answer section
+    document.getElementById('answer-section').innerHTML = `
+        <div class="space-y-4">
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 rounded-full bg-custom flex items-center justify-center">
+                        <i class="fas fa-robot text-white text-sm"></i>
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <p class="text-gray-700">Upload an image and ask questions about:</p>
+                    <ul class="mt-2 space-y-2 text-gray-600">
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Objects and their attributes</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Actions and activities</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Scene context and relationships</li>
+                        <li class="flex items-center gap-2"><i class="fas fa-check text-custom text-sm"></i> Abstract concepts in the image</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `;
+}
+    
+    // Feature activation functions
+    function activateVQA() {
+      if (window.location.pathname !== '/vqa') {
+        window.location.href = '/vqa';
+      }
+    }
+    
+    function activateImageCaptioning() {
+      if ('{{ filename }}') {
+        window.location.href = `/caption/${currentImage}`;
+      } else {
+        window.location.href = '/caption';
+      }
+    }
+    
+    function activateSimilarImageSearch() {
+      if ('{{ filename }}') {
+        window.location.href = `/similarity/${currentImage}`;
+      } else {
+        window.location.href = '/similarity';
+      }
+    }
+    
+    function activateImageEnhancement() {
+      if ('{{ filename }}') {
+        window.location.href = `/enhance/${currentImage }`;
+      } else {
+        window.location.href = '/enhance';
+      }
+    }
+    
+    function showError(message) {
+      const uploadZone = document.querySelector('.border-dashed');
+      uploadZone.innerHTML = `
+        <div class="mx-auto flex flex-col items-center text-red-500">
+          <i class="fas fa-exclamation-circle text-4xl mb-4"></i>
+          <p>${message}</p>
+          <button class="mt-4 !rounded-button bg-custom text-white px-4 py-2 text-sm" onclick="resetUpload()">
+            Try Again
+          </button>
+        </div>
+      `;
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      fetch('/get_current_image')
+          .then(response => response.json())
+          .then(data => {
+              if (data.current_image) {
+                  currentImage = data.current_image;
+                  document.getElementById('question-input').disabled = false;
+                  document.getElementById('submit-question-btn').disabled = false;
+              }
+          })
+          .catch(error => console.error('Error fetching current image:', error));
+  });
+    /*function resetUpload() {
+      document.getElementById('file-input').value = '';
+      const uploadZone = document.querySelector('.border-dashed');
+      uploadZone.innerHTML = `
+        <div class="mx-auto flex flex-col items-center">
+          <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+          <h3 class="text-lg font-medium text-gray-900 mb-2">Drop your image here</h3>
+          <p class="text-sm text-gray-500 mb-4">or click to upload</p>
+          <button class="!rounded-button bg-custom text-white px-6 py-2 text-sm font-medium hover:bg-opacity-90 transition-colors" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+            Choose File
+          </button>
+        </div>
+      `;
+    }*/
+  </script>
+</body>
+</html>
