@@ -59,31 +59,6 @@ ImageChatbot is an advanced web application that leverages artificial intelligen
 - **User Interface**: Intuitive and interactive
 - **Responsive Design**: Mobile-friendly experience
 
-## 📁 Project Structure
-
-```
-.
-├── app.py                 # Main application file
-├── models/               # AI/ML models
-│   ├── blip-vqa/        # Visual Question Answering model
-│   ├── blip-captioning/ # Image Captioning model
-│   └── modelx2.ort      # Image enhancement model
-├── templates/           # HTML templates
-│   ├── index.html      # Home page
-│   ├── login.html      # Login page
-│   ├── signup.html     # Registration page
-│   ├── enhance.html    # Image enhancement page
-│   ├── caption.html    # Image captioning page
-│   ├── vqa.html        # Visual QA page
-│   ├── similarity.html # Similarity search page
-│   └── process.html    # Processing page
-├── static/             # Static files
-│   ├── css/           # Stylesheets
-│   ├── uploads/       # User uploaded images
-│   └── upscaled/      # Enhanced images
-└── requirements.txt    # Python dependencies
-```
-
 ## 🛠️ Installation Guide
 
 1. **Clone the Repository**
